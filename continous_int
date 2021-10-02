@@ -1,0 +1,67 @@
+pipeline {
+ agent any 
+ parameters {
+  string (defaultValue: 'master', description: 'Please select the name', name: 'name', trim: true)
+  choice (choices: ['Pease select the environment', 'master', 'dev', 'prod'], description: 'Please select the environement', name: 'environment')
+  booleanParam (description: 'Please select the deploy', name: 'deploy')
+}
+  stages{
+   stage("SCM"){
+    steps{
+	 script{
+	 echo 'clone started'
+	 git branch: '$name', credentialsId: 'Github_cred', url: 'https://github.com/naveen5758/Branch.git'
+	 echo '${params.name}'
+	 echo 'clone completed'
+	 }
+	}
+   }
+   stage("build"){
+    steps{
+	 script{
+	 echo 'build started'
+	 sh 'mvn clean package'
+	 echo 'build completed'
+	 }	
+	}
+	post{
+	 success{ 
+	 junit allowEmptyResults: true, testResults: 'target/surefire-reports/*.xml'
+	 }
+	}
+   }
+   
+    stage("Sonarqubes"){
+    steps{
+	 script{
+	 echo 'sonar started'
+
+	 echo 'sonar completed'
+	 }	
+	}
+   } 
+   
+   
+   stage("nexus"){
+    steps{
+	 script{
+	 echo 'nexus started'
+
+	 echo 'nexus completed'
+	 }	
+	}
+   }    
+     
+ 
+   stage("calling_CD_job"){
+    steps{
+	 script{
+	 echo 'CD job started'
+     build job: 'CD', parameters: [string(name: 'name', value:"${params.name}"),string(name: 'environment', value:"${params.environment}"),
+	 string(name: 'deploy', value:"${params.deploy}")]
+	 echo 'CD completed'
+	 }	
+	}
+   }   
+  }
+}

@@ -1,0 +1,52 @@
+pipeline{
+ agent any
+  parameters {
+  string (name: 'name', defaultValue: '',, description: 'Please select the name',trim: true)
+  string (name: 'environment', defaultValue: '',, description: 'Please select the environement')
+  string (name: 'deploy', defaultValue: '',, description: 'Please select the deploy')
+} 
+  stages{
+   stage("verification"){
+    steps{
+	 script{
+	  echo "${params.name}"
+	  echo "${params.environment}"
+	  echo "${params.deploy}" 
+	 }
+	}
+   }
+   stage("Deployement"){ 
+   	     when {   
+	   expression{params.name=="dev" && params.deploy=="true"} 
+	          } 
+    steps{
+	 script{
+	 echo 'deployement started'
+      sh "scp -o StrictHostKeyChecking=no /var/lib/jenkins/workspace/CI/target/psdapp.war root@13.56.238.30:/root/apache-tomcat-9.0.53/webapps"
+      sh "ssh root@13.56.238.30 /root/apache-tomcat-9.0.53/bin/startup.sh"
+	 echo 'deployement completed'	 	 
+	 
+	 }
+	}
+   }
+  }
+  post{
+    success {
+        mail to: 'naveentanish20@gmail.com',
+             subject: "success Pipeline: ${currentBuild.fullDisplayName}",
+             body: "Build success and buils number is ${env.BUILD_URL}"
+			 
+    }
+    failure {
+        mail to: 'naveentanish20@gmail.com',
+             subject: "failure Pipeline: ${currentBuild.fullDisplayName}",
+             body: "Build failure and build number is ${env.BUILD_URL}"
+    }
+
+ always{
+ 
+ echo 'this is always'
+ }
+}
+}
+
